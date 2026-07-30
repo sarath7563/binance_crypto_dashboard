@@ -4,62 +4,59 @@ import requests
 import plotly.graph_objects as go
 import yfinance as yf
 
-# 1. PAGE LAYOUT CONFIGURATION
-st.set_page_config(page_title="Binance Analytics Engine", page_icon="⚡", layout="wide")
+# 1. APPLICATION VIEWPORT SETUP
+st.set_page_config(page_title="Universal Crypto Intelligence Engine", page_icon="⚡", layout="wide")
 
-st.title("⚡ Real-Time Binance Market Intelligence Dashboard")
-st.markdown("An advanced college project tracking active trading pairs, full historical lifespans, and math-driven entry/exit signals.")
+st.title("⚡ Universal Real-Time Crypto Risk Analytics Terminal")
+st.markdown("An enterprise-grade data engineering framework capable of indexing, scoring, and visually mapping **any asset class** across high-cap tokens, altcoins, meme economies, and micro-cap utility networks.")
 
-# 2. DYNAMIC BINANCE TICKER INGESTION PIPELINE
-@st.cache_data(ttl=600)
-def fetch_binance_symbols():
-    try:
-        url = "https://api.binance.com/api/v3/exchangeInfo"
-        response = requests.get(url, timeout=5).json()
-        symbols = []
-        for s in response['symbols']:
-            if s['status'] == 'TRADING' and s['quoteAsset'] == 'USDT':
-                clean_name = f"{s['baseAsset']}/USDT"
-                symbols.append((clean_name, s['symbol']))
-        symbols.sort(key=lambda x: x[0])
-        return symbols
-    except Exception:
-        return [("Bitcoin (BTC/USDT)", "BTCUSDT"), ("Ethereum (ETH/USDT)", "ETHUSDT")]
+# ==========================================
+# 2. INTUITIVE TEXT INPUT ENGINE (ANY COIN IN EXISTENCE)
+# ==========================================
+st.sidebar.header("🎛️ Control Panel")
+st.sidebar.markdown("Type the standard trading abbreviation for any coin in the global ecosystem to extract live calculations.")
 
-with st.spinner("Connecting to Binance API Endpoints..."):
-    binance_pairs = fetch_binance_symbols()
+# Main Input Bar
+search_query = st.text_input("🎯 Enter Any Cryptocurrency Token Symbol (e.g. BTC, ETH, DMTR, VLO, PEPE, SHIB):", value="BTC").strip().upper()
 
-pair_dict = {display: ticker for display, ticker in binance_pairs}
+# Handle empty submission string edge cases
+if not search_query:
+    search_query = "BTC"
 
-# 3. INTERACTIVE SEARCH & SELECTOR INTERFACE
-st.markdown("### 🔍 Asset Discovery Workspace")
-selected_display = st.selectbox("Type or select a cryptocurrency pair to analyze:", options=list(pair_dict.keys()), index=0)
-selected_ticker = pair_dict[selected_display]
+# Core Formatting Conversion Layer for Stablecoins vs Utility Tokens
+if search_query in ["USDT", "USDC", "DAI", "BUSD"]:
+    ticker_symbol = f"{search_query}==X"
+else:
+    ticker_symbol = f"{search_query}-USD"
 
-# Manual Refresh Trigger Button for Presentations
-if st.button("🔄 Force Refresh Market Data"):
+# Hard Reset Tooling
+if st.sidebar.button("🔄 Clear App Cache Buffer"):
     st.cache_data.clear()
+    st.rerun()
 
-# 4. DATA PIPELINE WITH AUTOMATIC BACKUP 
-@st.cache_data(ttl=30)  # Lowered cache time to 30 seconds for immediate updates
-def get_historical_data(symbol):
-    # Strategy A: Attempt pulling via Yahoo Finance backup engine immediately for cloud stability
+# ==========================================
+# 3. HIGH-CAPACITY RESILIENT DATA RELAY
+# ==========================================
+@st.cache_data(ttl=30)  
+def extract_crypto_lifespan(ticker):
+    # Primary Vector: Pull maximum historical matrix from open financial nodes
     try:
-        clean_ticker = symbol.replace("USDT", "-USD")
-        fallback_data = yf.Ticker(clean_ticker).history(period="3mo") # 3 months data is much faster to load
-        if not fallback_data.empty:
-            df = fallback_data.reset_index()
-            df.rename(columns={'High': 'High', 'Low': 'Low', 'Close': 'Close'}, inplace=True)
+        data_pull = yf.Ticker(ticker)
+        # 1-year timeline maximizes rapid rendering response on remote servers
+        raw_df = data_pull.history(period="1y") 
+        if not raw_df.empty:
+            df = raw_df.reset_index()
             df['Date'] = df['Date'].dt.tz_localize(None)
             return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
     except Exception:
         pass
 
-    # Strategy B: Fallback to Binance REST App Connection
+    # Secondary Vector: Direct fallback pipeline request to primary spot markets
     try:
-        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&limit=100"
-        data = requests.get(url, timeout=5).json()
-        df = pd.DataFrame(data, columns=[
+        clean_pair = ticker.replace("-USD", "USDT")
+        url = f"https://api.binance.com/api/v3/klines?symbol={clean_pair}&interval=1d&limit=100"
+        response = requests.get(url, timeout=5).json()
+        df = pd.DataFrame(response, columns=[
             'Open Time', 'Open', 'High', 'Low', 'Close', 'Volume',
             'Close Time', 'Quote Asset Volume', 'Number of Trades',
             'Taker Buy Base Asset Volume', 'Taker Buy Quote Asset Volume', 'Ignore'
@@ -72,58 +69,94 @@ def get_historical_data(symbol):
     except Exception:
         return pd.DataFrame()
 
-# Run evaluation logic
+# ==========================================
+# 4. DATA COMPUTATION LOGIC EDGE ROOM
+# ==========================================
 try:
-    df_history = get_historical_data(selected_ticker)
+    with st.spinner(f"Ingesting live network ledgers for '{search_query}'..."):
+        df_metrics = extract_crypto_lifespan(ticker_symbol)
     
-    if not df_history.empty:
-        # 5. MATHEMATICAL COMPUTATIONS (ATH, ATL, TARGETS)
-        current_price = df_history['Close'].iloc[-1]
-        all_time_high = df_history['High'].max()
-        all_time_low = df_history['Low'].min()
+    if not df_metrics.empty:
+        live_price = df_metrics['Close'].iloc[-1]
+        ath_price = df_metrics['High'].max()
+        atl_price = df_metrics['Low'].min()
         
-        moving_avg_50 = df_history['Close'].rolling(window=50).mean().iloc[-1]
-        if pd.isna(moving_avg_50):
-            moving_avg_50 = current_price
+        # Calculate trailing 50-day support boundaries
+        rolling_mean = df_metrics['Close'].rolling(window=50).mean().iloc[-1]
+        if pd.isna(rolling_mean):
+            rolling_mean = live_price
             
-        entry_point = moving_avg_50 * 0.90
-        exit_point = all_time_high * 0.95
+        entry_target = rolling_mean * 0.90
+        exit_target = ath_price * 0.95
 
-        if exit_point <= current_price:
-            exit_point = current_price * 1.15
+        # Protection condition if an asset is violently surging out to new historical records
+        if exit_target <= live_price:
+            exit_target = live_price * 1.15
 
-        # Render Information Dashboards Matrix
+        # Interface Grid Layout Outputs
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.metric(label="Live Exchange Price", value=f"${current_price:,.4f}")
+            st.metric(label=f"Current {search_query} Fair Value", value=f"${live_price:,.4f}")
         with m2:
-            st.metric(label="Recent Dynamic High", value=f"${all_time_high:,.4f}")
+            st.metric(label="Timeline Period High (ATH)", value=f"${ath_price:,.4f}")
         with m3:
-            st.metric(label="Recent Dynamic Low", value=f"${all_time_low:,.4f}")
+            st.metric(label="Timeline Period Low (ATL)", value=f"${atl_price:,.4f}")
 
         st.markdown("---")
 
-        # 6. RISK ZONING VERDICTS (TRAFFIC LIGHT)
-        st.subheader("🚦 Actionable Position Blueprint")
-        if current_price <= entry_point * 1.05:
-            st.success(f"🟢 BUY ZONE ACTIVATED: Optimal entry target: **${entry_point:,.4f}**")
-        elif current_price >= exit_point * 0.85:
-            st.error(f"🔴 TAKE PROFIT / EXIT ZONE INBOUND: Target complete exit: **${exit_point:,.4f}**")
+        # ==========================================
+        # 5. DYNAMIC COLOR ADVISORY MATRIX (TRAFFIC LIGHT)
+        # ==========================================
+        st.subheader("🚦 Automated Position Architecture")
+        if live_price <= entry_target * 1.05:
+            st.success(f"🟢 BUY WINDOW ACTIVE: Valuation metrics imply asset is structurally oversold. Target Entry Point: **${entry_target:,.4f}**")
+        elif live_price >= exit_target * 0.85:
+            st.error(f"🔴 LIQUIDATION PEAK TRIGGERED: Asset approaching severe market overextension zones. Target Exit Point: **${exit_target:,.4f}**")
         else:
-            st.warning(f"🟡 HOLD ZONE: Next Entry Floor: **${entry_point:,.4f}** | Next Exit Peak: **${exit_point:,.4f}**")
+            st.warning(f"🟡 HOLD CHANNEL ENGAGED: Asset trading within neutral horizontal boundaries. Accumulation Floor: **${entry_target:,.4f}** | Distribution Ceiling: **${exit_target:,.4f}**")
 
-        # 7. CUSTOM INTERACTIVE PLOTLY ENGINE
-        st.subheader(f"📈 {selected_display} Lifespan Valuation Map")
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df_history['Date'], y=df_history['Close'], mode='lines', name='Price Timeline', line=dict(color='#1f77b4', width=2)))
-        fig.add_trace(go.Scatter(x=[df_history['Date'].iloc[0], df_history['Date'].iloc[-1]], y=[entry_point, entry_point], mode='lines', name='💡 Target Entry Point', line=dict(color='#2ca02c', width=2, dash='dash')))
-        fig.add_trace(go.Scatter(x=[df_history['Date'].iloc[0], df_history['Date'].iloc[-1]], y=[exit_point, exit_point], mode='lines', name='🎯 Target Exit Point', line=dict(color='#d62728', width=2, dash='dash')))
+        # ==========================================
+        # 6. HIGH-RESOLUTION INTERACTIVE CHART CANVAS
+        # ==========================================
+        st.subheader(f"📈 Detailed {search_query} Chronological Valuation Map")
         
-        fig.update_layout(hovermode="x unified", xaxis_title="Timeline Calendar", yaxis_title="Asset Valuation (USDT)", template="plotly_dark", legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+        fig = go.Figure()
+        
+        # Plot continuous valuation line
+        fig.add_trace(go.Scatter(
+            x=df_metrics['Date'], y=df_metrics['Close'], 
+            mode='lines', name='Market Value Line', 
+            line=dict(color='#00ffcc', width=2.5)
+        ))
+        
+        # Plot mathematical floor channel boundary
+        fig.add_trace(go.Scatter(
+            x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+            y=[entry_target, entry_target], 
+            mode='lines', name='💡 Target Entry Floor', 
+            line=dict(color='#2ca02c', width=2, dash='dash')
+        ))
+        
+        # Plot mathematical ceiling channel boundary
+        fig.add_trace(go.Scatter(
+            x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+            y=[exit_target, exit_target], 
+            mode='lines', name='🎯 Target Exit Ceiling', 
+            line=dict(color='#d62728', width=2, dash='dash')
+        ))
+        
+        # Styling configurations for professional visual output
+        fig.update_layout(
+            hovermode="x unified",
+            xaxis_title="Time Series Calendar",
+            yaxis_title="Asset Valuation (USD Equivalents)",
+            template="plotly_dark",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     else:
-        st.warning("🔄 Fetching network response tickers... click the 'Force Refresh' button above if loading takes too long.")
+        st.error(f"⚠️ Index Lookup Notice: Unrecognized symbol identifier '{search_query}'. Please verify that the shorthand ticker tag matches global tracking standards.")
 
 except Exception as e:
-    st.info("💡 Application initializing... Select a cryptocurrency from the drop-down matrix above to populate live analytics charts.")
+    st.info("💡 Awaiting token entry inputs... Input desired trading symbol inside the primary search console.")
