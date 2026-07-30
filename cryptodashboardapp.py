@@ -36,12 +36,28 @@ st.markdown("### 🔍 Asset Discovery Workspace")
 selected_display = st.selectbox("Type or select a cryptocurrency pair to analyze:", options=list(pair_dict.keys()), index=0)
 selected_ticker = pair_dict[selected_display]
 
-# 4. DATA PIPELINE WITH AUTOMATIC BACKUP (FIXES THE DATA NULL WARNING)
-@st.cache_data(ttl=60)
+# Manual Refresh Trigger Button for Presentations
+if st.button("🔄 Force Refresh Market Data"):
+    st.cache_data.clear()
+
+# 4. DATA PIPELINE WITH AUTOMATIC BACKUP 
+@st.cache_data(ttl=30)  # Lowered cache time to 30 seconds for immediate updates
 def get_historical_data(symbol):
+    # Strategy A: Attempt pulling via Yahoo Finance backup engine immediately for cloud stability
     try:
-        # Strategy A: Attempt pulling directly from Binance app connections
-        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&limit=1000"
+        clean_ticker = symbol.replace("USDT", "-USD")
+        fallback_data = yf.Ticker(clean_ticker).history(period="3mo") # 3 months data is much faster to load
+        if not fallback_data.empty:
+            df = fallback_data.reset_index()
+            df.rename(columns={'High': 'High', 'Low': 'Low', 'Close': 'Close'}, inplace=True)
+            df['Date'] = df['Date'].dt.tz_localize(None)
+            return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+    except Exception:
+        pass
+
+    # Strategy B: Fallback to Binance REST App Connection
+    try:
+        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&limit=100"
         data = requests.get(url, timeout=5).json()
         df = pd.DataFrame(data, columns=[
             'Open Time', 'Open', 'High', 'Low', 'Close', 'Volume',
@@ -54,13 +70,7 @@ def get_historical_data(symbol):
         df['Low'] = df['Low'].astype(float)
         return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
     except Exception:
-        # Strategy B: If Binance blocks us, immediately download via Yahoo Finance backup engine
-        clean_ticker = symbol.replace("USDT", "-USD")
-        fallback_data = yf.Ticker(clean_ticker).history(period="max")
-        df = fallback_data.reset_index()
-        df.rename(columns={'High': 'High', 'Low': 'Low', 'Close': 'Close'}, inplace=True)
-        df['Date'] = df['Date'].dt.tz_localize(None)
-        return df[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
+        return pd.DataFrame()
 
 # Run evaluation logic
 try:
@@ -69,7 +79,6 @@ try:
     if not df_history.empty:
         # 5. MATHEMATICAL COMPUTATIONS (ATH, ATL, TARGETS)
         current_price = df_history['Close'].iloc[-1]
-        
         all_time_high = df_history['High'].max()
         all_time_low = df_history['Low'].min()
         
@@ -88,9 +97,9 @@ try:
         with m1:
             st.metric(label="Live Exchange Price", value=f"${current_price:,.4f}")
         with m2:
-            st.metric(label="All-Time High (ATH)", value=f"${all_time_high:,.4f}")
+            st.metric(label="Recent Dynamic High", value=f"${all_time_high:,.4f}")
         with m3:
-            st.metric(label="All-Time Low (ATL)", value=f"${all_time_low:,.4f}")
+            st.metric(label="Recent Dynamic Low", value=f"${all_time_low:,.4f}")
 
         st.markdown("---")
 
@@ -114,7 +123,7 @@ try:
         st.plotly_chart(fig, use_container_width=True)
 
     else:
-        st.warning("⚠️ Market Data Loading: Pulling updated tracking tickers. Please refresh.")
+        st.warning("🔄 Fetching network response tickers... click the 'Force Refresh' button above if loading takes too long.")
 
 except Exception as e:
-    st.error("⚠️ Loading Engine Reset. Please toggle your selected coin to initialize details.")
+    st.info("💡 Application initializing... Select a cryptocurrency from the drop-down matrix above to populate live analytics charts.")
