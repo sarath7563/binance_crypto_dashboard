@@ -163,4 +163,6 @@ try:
         live_price = df_metrics['Close'].iloc[-1] * curr_rate
         open_price = df_metrics['Open'].iloc[-1] * curr_rate
         ath_price = df_metrics['High'].max() * curr_rate
-        atl_
+        atl_price = df_metrics['Low'].min() * curr_rate
+        
+        rolling_mean = df_metrics['Close'].rolling(window=50).mean().iloc[-1]
