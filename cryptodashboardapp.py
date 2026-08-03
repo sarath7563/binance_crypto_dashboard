@@ -187,4 +187,204 @@ try:
         <style>
             /* Force metric containers to use an explicit dark theme layout block to contrast light browser modes */
             div[data-testid="stMetric"] {
-                background-color: #1e293b !important
+                background-color: #1e293b !important;
+                border: 2px solid #334155 !important;
+                padding: 20px !important;
+                border-radius: 12px !important;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3) !important;
+            }
+            /* Lock description labels to light slate silver */
+            div[data-testid="stMetricLabel"] p {
+                color: #e2e8f0 !important;
+                font-size: 1.1rem !important;
+                font-weight: 600 !important;
+            }
+            /* Force numerical metric price values to pop in bold white text digits */
+            div[data-testid="stMetricValue"] div {
+                color: #ffffff !important;
+                font-size: 2.4rem !important;
+                font-weight: 700 !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Primary Metrics Cards Layout Display
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric(label=f"Current {search_query} Value ({currency_selection})", value=f"{curr_symbol}{live_price:,.4f}", delta=f"{daily_change_pct:+.2f}%")
+        with m2:
+            st.metric(label="Suggested Entry (Floor Target)", value=f"{curr_symbol}{entry_target:,.4f}")
+        with m3:
+            st.metric(label="Suggested Exit (Take Profit)", value=f"{curr_symbol}{exit_target:,.4f}")
+
+        st.markdown("---")
+
+        # ==========================================
+        # 5. DUAL INTERACTIVE INTERFACE TABS
+        # ==========================================
+        tab_trading, tab_technology = st.tabs(["📈 Live Trading & AI Analytics", "🔬 Technology Infrastructure"])
+
+        with tab_trading:
+            col_graph, col_analysis = st.columns([2, 1])
+
+            with col_graph:
+                st.subheader(f"📊 {search_query} Candlestick Chart Engine")
+                
+                fig = go.Figure()
+                
+                # Candlestick Data Plottings
+                fig.add_trace(go.Candlestick(
+                    x=df_metrics['Date'],
+                    open=df_metrics['Open'] * curr_rate,
+                    high=df_metrics['High'] * curr_rate,
+                    low=df_metrics['Low'] * curr_rate,
+                    close=df_metrics['Close'] * curr_rate,
+                    name='Price Candles',
+                    increasing_line_color='#00ffcc', 
+                    decreasing_line_color='#ff3366'
+                ))
+                
+                # Conditional Trendlines
+                if show_ma50 and len(df_metrics) >= 50:
+                    df_metrics['MA50'] = df_metrics['Close'].rolling(window=50).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA50'], mode='lines', name='50-Day SMA', line=dict(color='#ffaa00', width=1.5)))
+                    
+                if show_ma200 and len(df_metrics) >= 200:
+                    df_metrics['MA200'] = df_metrics['Close'].rolling(window=200).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA200'], mode='lines', name='200-Day SMA', line=dict(color='#ff00ff', width=1.5, dash='dot')))
+                
+                # 7-Day Future Machine Learning Prediction Modeling
+                if len(df_metrics) > 10:
+                    df_metrics['Timestamp'] = df_metrics['Date'].astype('int64') // 10**9
+                    X_ml = df_metrics['Timestamp'].values.reshape(-1, 1)
+                    y_ml = df_metrics['Close'].values * curr_rate
+                    
+                    model = LinearRegression()
+                    model.fit(X_ml, y_ml)
+                    
+                    last_timestamp = df_metrics['Timestamp'].iloc[-1]
+                    future_timestamps = np.array([last_timestamp + i * 86400 for i in range(1, 8)])
+                    future_predictions = model.predict(future_timestamps.reshape(-1, 1))
+                    
+                    future_dates = [df_metrics['Date'].iloc[-1] + pd.Timedelta(days=i) for i in range(1, 8)]
+                    
+                    plot_dates = [df_metrics['Date'].iloc[-1]] + list(future_dates)
+                    plot_preds = [live_price] + list(future_predictions)
+                    
+                    fig.add_trace(go.Scatter(x=plot_dates, y=plot_preds, mode='lines+markers', name='🔮 7-Day AI Forecast', line=dict(color='#b55fe6', width=2, dash='dash')))
+                    pred_verdict = "UP (Increase)" if future_predictions[-1] > live_price else "DOWN (Decrease)"
+                    target_pred_val = future_predictions[-1]
+                else:
+                    pred_verdict = "Insufficient History"
+                    target_pred_val = live_price
+
+                # Strategy Target Reference Channels
+                fig.add_trace(go.Scatter(
+                    x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+                    y=[entry_target, entry_target], 
+                    mode='lines+text', 
+                    name='💡 Target Entry Floor', 
+                    line=dict(color='#2ca02c', width=2, dash='dash'),
+                    text=["", f"Entry Floor: {curr_symbol}{entry_target:,.2f}"],
+                    textposition="top left"
+                ))
+                fig.add_trace(go.Scatter(
+                    x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+                    y=[exit_target, exit_target], 
+                    mode='lines+text', 
+                    name='🎯 Target Exit Ceiling', 
+                    line=dict(color='#d62728', width=2, dash='dash'),
+                    text=["", f"Exit Target: {curr_symbol}{exit_target:,.2f}"],
+                    textposition="bottom left"
+                ))
+                
+                fig.update_layout(
+                    hovermode="x unified",
+                    xaxis_title="Timeline Calendar",
+                    yaxis_title=f"Price ({currency_selection})",
+                    template="plotly_dark",
+                    xaxis_rangeslider_visible=False,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            with col_analysis:
+                st.subheader("📋 Day-to-Day Technical Analysis")
+                
+                if live_price <= entry_target * 1.05:
+                    st.success(f"🟢 BUY SIGNAL: Structurally Undersold")
+                elif live_price >= exit_target * 0.85:
+                    st.error(f"🔴 TAKE PROFIT: Approaching Resistance")
+                else:
+                    st.warning(f"🟡 HOLD STATUS: Balanced Range Trading")
+                
+                st.markdown(f"""
+                <div style="background-color: #311b92; padding: 15px; border-radius: 8px; border: 1px solid #7c4dff; margin-bottom: 20px;">
+                    <h4 style="color: #e040fb; margin-top:0;">🔮 7-Day Machine Learning Trend Box</h4>
+                    <p style="color: white; margin-bottom: 5px;">Projected Trend Direction: <b>{pred_verdict}</b></p>
+                    <p style="color: white; margin-bottom: 0;">Expected End Target Value: <b>{curr_symbol}{target_pred_val:,.4f}</b></p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.markdown(f"""
+                ### 🔍 Core Target Blueprint
+                * **Suggested Entry Point (Buy Zone):** `{curr_symbol}{entry_target:,.4f}`
+                * **Suggested Exit Point (Sell Target):** `{curr_symbol}{exit_target:,.4f}`
+                
+                ---
+                ### 📉 Current Horizon Insights
+                * **Current price deviation vs Base Line:** `{((live_price - rolling_mean)/rolling_mean)*100:.2f}%`
+                * **Distance to Window High:** `{((ath_price - live_price)/ath_price)*100:.2f}% down from peak`
+                * **Current Volatility Spread:** `{curr_symbol}{(df_metrics['High'].iloc[-1] - df_metrics['Low'].iloc[-1])*curr_rate:,.4f}`
+                """)
+                
+                scaled_df = df_metrics.copy()
+                for col in ['Open', 'High', 'Low', 'Close']:
+                    scaled_df[col] = scaled_df[col] * curr_rate
+                csv_buffer = scaled_df.to_csv(index=False).encode('utf-8')
+                st.download_button(label="📥 Download Data Spreadsheet", data=csv_buffer, file_name=f"{search_query}_historical_metrics.csv", mime="text/csv")
+
+        with tab_technology:
+            st.subheader(f"🔬 Decentralized Network Tech Profile: {search_query}")
+            
+            c_left, c_right = st.columns([2, 1])
+            with c_left:
+                st.markdown("#### 📖 Project Background Summary")
+                st.info(project_profile)
+            
+            with c_right:
+                st.markdown("#### ⚙️ Structural Architecture Blueprint")
+                if search_query in ["BTC", "WBTC"]:
+                    st.markdown("""
+                    * **Network Layer:** Layer-1 Base Ledger
+                    * **Consensus Engine:** Proof-of-Work (PoW)
+                    * **Hashing Scheme:** SHA-256
+                    * **Primary Utility:** Absolute Value Storage / Decentralized Sound Money
+                    """)
+                elif search_query in ["ETH", "LINK", "UNI", "AAVE"]:
+                    st.markdown("""
+                    * **Network Layer:** Layer-1 Smart Contract Platform / ERC-20
+                    * **Consensus Engine:** Proof-of-Stake (PoS)
+                    * **Execution Environment:** EVM (Ethereum Virtual Machine)
+                    * **Primary Utility:** Decentralized Applications (dApps) & Programmable Logic
+                    """)
+                elif search_query in ["SOL", "RAY", "JUP"]:
+                    st.markdown("""
+                    * **Network Layer:** Ultra High-Throughput Layer-1 Platform
+                    * **Consensus Engine:** Proof-of-History (PoH) + Proof-of-Stake
+                    * **Block Execution Latency:** Sub-second
+                    * **Primary Utility:** High-Frequency Defi Operations & Microtransactions
+                    """)
+                else:
+                    st.markdown(f"""
+                    * **Network Layer:** Alternate Utility Blockchain Token Ecosystem
+                    * **Consensus Engine:** Delegated Node Validation Architecture
+                    * **Storage Framework:** Distributed Ledgers Node Sync
+                    * **Primary Utility:** Native Transaction Processing & Protocol Governance
+                    """)
+
+    else:
+        st.error(f"⚠️ Index Lookup Notice: Unrecognized symbol identifier '{search_query}'. Please verify standard abbreviations.")
+
+except Exception as e:
+    st.info("💡 Awaiting token entry inputs... Input desired trading symbol inside the primary search console.")
