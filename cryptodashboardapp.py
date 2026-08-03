@@ -155,9 +155,9 @@ try:
         st.sidebar.markdown("---")
         st.sidebar.subheader("🏪 Recommended Exchanges")
         if search_query in ["BTC", "ETH", "SOL", "BNB", "XRP"]:
-            st.sidebar.info("💡 Available on Tier-1 Markets:\n* **Binance** (Best Liquidity)\n* **Coinbase**\n* **Kraken**")
+            st.sidebar.info("💡 Available on Tier-1 Markets:\n* **Binance**\n* **Coinbase**\n* **Kraken**")
         else:
-            st.sidebar.warning("💡 Low-Cap / Altcoin Markets:\n* **KuCoin**\n* **Gate.io**\n* **Uniswap / Raydium** (DEX)")
+            st.sidebar.warning("💡 Low-Cap / Altcoin Markets:\n* **KuCoin**\n* **Gate.io**\n* **Uniswap / Raydium**")
 
         # Calculations & Currency Scaling Applied
         live_price = df_metrics['Close'].iloc[-1] * curr_rate
@@ -185,8 +185,8 @@ try:
         # ==========================================
         st.markdown("""
         <style>
-            /* Force metric containers to use a explicit dark layout block to contrast light modes */
-            [data-testid="stMetric"] {
+            /* Force metric containers to use an explicit dark layout block to contrast light modes */
+            div[data-testid="stMetric"] {
                 background-color: #1e293b !important;
                 border: 2px solid #334155 !important;
                 padding: 20px !important;
@@ -194,13 +194,13 @@ try:
                 box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3) !important;
             }
             /* Lock the label text color to explicit light silver-grey */
-            [data-testid="stMetricLabel"] p {
-                color: #cbd5e1 !important;
+            div[data-testid="stMetricLabel"] p {
+                color: #e2e8f0 !important;
                 font-size: 1.1rem !important;
                 font-weight: 600 !important;
             }
             /* Force primary numbers to pop in stark solid white text */
-            [data-testid="stMetricValue"] {
+            div[data-testid="stMetricValue"] div {
                 color: #ffffff !important;
                 font-size: 2.4rem !important;
                 font-weight: 700 !important;
@@ -209,3 +209,66 @@ try:
         """, unsafe_allow_html=True)
 
         # Primary Metrics Cards Layout Display
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric(label=f"Current {search_query} Value ({currency_selection})", value=f"{curr_symbol}{live_price:,.4f}", delta=f"{daily_change_pct:+.2f}%")
+        with m2:
+            st.metric(label="Suggested Entry (Floor Target)", value=f"{curr_symbol}{entry_target:,.4f}")
+        with m3:
+            st.metric(label="Suggested Exit (Take Profit)", value=f"{curr_symbol}{exit_target:,.4f}")
+
+        st.markdown("---")
+
+        # ==========================================
+        # 5. DUAL INTERACTIVE INTERFACE TABS
+        # ==========================================
+        tab_trading, tab_technology = st.tabs(["📈 Live Trading & AI Analytics", "🔬 Technology Infrastructure"])
+
+        with tab_trading:
+            col_graph, col_analysis = st.columns([2, 1])
+
+            with col_graph:
+                st.subheader(f"📊 {search_query} Candlestick Chart Engine")
+                
+                fig = go.Figure()
+                
+                # Candlestick Data Plottings
+                fig.add_trace(go.Candlestick(
+                    x=df_metrics['Date'],
+                    open=df_metrics['Open'] * curr_rate,
+                    high=df_metrics['High'] * curr_rate,
+                    low=df_metrics['Low'] * curr_rate,
+                    close=df_metrics['Close'] * curr_rate,
+                    name='Price Candles',
+                    increasing_line_color='#00ffcc', 
+                    decreasing_line_color='#ff3366'
+                ))
+                
+                # Conditional Trendlines
+                if show_ma50 and len(df_metrics) >= 50:
+                    df_metrics['MA50'] = df_metrics['Close'].rolling(window=50).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA50'], mode='lines', name='50-Day SMA', line=dict(color='#ffaa00', width=1.5)))
+                    
+                if show_ma200 and len(df_metrics) >= 200:
+                    df_metrics['MA200'] = df_metrics['Close'].rolling(window=200).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA200'], mode='lines', name='200-Day SMA', line=dict(color='#ff00ff', width=1.5, dash='dot')))
+                
+                # 7-Day Future Machine Learning Prediction Modeling
+                if len(df_metrics) > 10:
+                    df_metrics['Timestamp'] = df_metrics['Date'].astype('int64') // 10**9
+                    X_ml = df_metrics['Timestamp'].values.reshape(-1, 1)
+                    y_ml = df_metrics['Close'].values * curr_rate
+                    
+                    model = LinearRegression()
+                    model.fit(X_ml, y_ml)
+                    
+                    last_timestamp = df_metrics['Timestamp'].iloc[-1]
+                    future_timestamps = np.array([last_timestamp + i * 86400 for i in range(1, 8)])
+                    future_predictions = model.predict(future_timestamps.reshape(-1, 1))
+                    
+                    future_dates = [df_metrics['Date'].iloc[-1] + pd.Timedelta(days=i) for i in range(1, 8)]
+                    
+                    plot_dates = [df_metrics['Date'].iloc[-1]] + list(future_dates)
+                    plot_preds = [live_price] + list(future_predictions)
+                    
+                    fig.add_
