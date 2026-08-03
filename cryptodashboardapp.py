@@ -142,4 +142,25 @@ try:
             network_stats = live_ticker_instance.info
             st.sidebar.markdown("---")
             st.sidebar.subheader("🏆 Token Network Stats")
-            m_cap = network
+            m_cap = network_stats.get('marketCap')
+            vol_24 = network_stats.get('volume24Hr') or network_stats.get('volume')
+            circ_supply = network_stats.get('circulatingSupply')
+            st.sidebar.write(f"**Market Cap:** {curr_symbol}{m_cap*curr_rate:,.0f}" if m_cap else "**Market Cap:** N/A")
+            st.sidebar.write(f"**24h Vol:** {curr_symbol}{vol_24*curr_rate:,.0f}" if vol_24 else "**24h Vol:** N/A")
+            st.sidebar.write(f"**Circ Supply:** {circ_supply:,.0f} {search_query}" if circ_supply else "**Circ Supply:** N/A")
+        except Exception:
+            pass
+
+        # Exchange Recommendation Engine Logic
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("🏪 Recommended Exchanges")
+        if search_query in ["BTC", "ETH", "SOL", "BNB", "XRP"]:
+            st.sidebar.info("💡 Available on Tier-1 Markets:\n* **Binance** (Best Liquidity)\n* **Coinbase**\n* **Kraken**")
+        else:
+            st.sidebar.warning("💡 Low-Cap / Altcoin Markets:\n* **KuCoin**\n* **Gate.io**\n* **Uniswap / Raydium** (DEX)")
+
+        # Calculations & Currency Scaling Applied
+        live_price = df_metrics['Close'].iloc[-1] * curr_rate
+        open_price = df_metrics['Open'].iloc[-1] * curr_rate
+        ath_price = df_metrics['High'].max() * curr_rate
+        atl_
