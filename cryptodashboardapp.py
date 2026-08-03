@@ -121,4 +121,28 @@ def fetch_asset_profile_summary(ticker, symbol):
         response = requests.get(url, timeout=5).json()
         description = response.get('description', {}).get('en')
         if description and len(description.strip()) > 10:
-            return
+            return description.split("<a href=")[0]
+    except Exception:
+        pass
+
+    return f"Detailed project documentation for '{symbol}' is actively tracked on decentralized ledger ecosystems."
+
+# ==========================================
+# 4. DATA COMPUTATION & VIEWPORT MATRIX
+# ==========================================
+try:
+    with st.spinner(f"Ingesting live network ledgers for '{search_query}'..."):
+        df_metrics = extract_crypto_lifespan(ticker_symbol, chosen_period)
+        project_profile = fetch_asset_profile_summary(ticker_symbol, search_query)
+    
+    if not df_metrics.empty:
+        # Fetching Sidebar Network Statistics
+        try:
+            live_ticker_instance = yf.Ticker(ticker_symbol)
+            network_stats = live_ticker_instance.info
+            st.sidebar.markdown("---")
+            st.sidebar.subheader("🏆 Token Network Stats")
+            m_cap = network_stats.get('marketCap')
+            vol_24 = network_stats.get('volume24Hr') or network_stats.get('volume')
+            circ_supply = network_stats.get('circulatingSupply')
+            st.sidebar.write
