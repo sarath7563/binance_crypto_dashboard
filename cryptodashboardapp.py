@@ -26,7 +26,7 @@ search_query = st.text_input("🎯 Enter Any Cryptocurrency Token Symbol (e.g. B
 if not search_query:
     search_query = "BTC"
 
-# NEW FEATURE: Dynamic Global Currency Selector Filter
+# Dynamic Global Currency Selector Filter
 st.sidebar.markdown("---")
 st.sidebar.subheader("💱 Fiat Base Currency")
 selected_currency = st.sidebar.selectbox(
@@ -51,22 +51,30 @@ def get_live_fiat_rate(target_currency):
             return float(rate_data['Close'].iloc[-1])
     except Exception:
         pass
-    return fallback_rate[target_currency]
+    return fallback_rate
 
 # Compute multiplier conversion index
 conversion_rate = get_live_fiat_rate(selected_currency)
 
-# Timeframe Range Selector
+# Timeframe Range Selector (1D, 1W, 1M, 3M, 6M, 1Y, MAX)
 st.sidebar.markdown("---")
 st.sidebar.subheader("⏰ Analysis Horizon")
 timeframe = st.sidebar.radio(
     "Choose historical scale window:",
-    ["1 Week", "1 Month", "3 Month", "6 Month", "1 Year", "MAX"],
-    index=4,
+    ["1 Day", "1 Week", "1 Month", "3 Month", "6 Month", "1 Year", "MAX"],
+    index=5,
     horizontal=False
 )
 
-tf_map = {"1 Week": "5d", "1 Month": "1mo", "3 Month": "3mo", "6 Month": "6mo", "1 Year": "1y", "MAX": "max"}
+tf_map = {
+    "1 Day": "1d",
+    "1 Week": "5d",
+    "1 Month": "1mo",
+    "3 Month": "3mo",
+    "6 Month": "6mo",
+    "1 Year": "1y",
+    "MAX": "max"
+}
 chosen_period = tf_map[timeframe]
 
 # Technical Overlays Control
@@ -118,7 +126,7 @@ def extract_crypto_lifespan(ticker, period):
     except Exception:
         return pd.DataFrame()
 
-# RE-ADDED & FIX: Multi-layer Fundamental Parser for Obscure Altcoins
+# Comprehensive Token Information and Technology Profile Parser
 @st.cache_data(ttl=3600)  
 def fetch_asset_profile_summary(ticker, symbol):
     try:
@@ -165,7 +173,7 @@ try:
         except Exception:
             pass
 
-        # Apply Live Fiat Multiplier to Raw Ticker Data Frames
+        # Apply Live Fiat Multiplier to Ticker Data Columns
         for col in ['Open', 'High', 'Low', 'Close']:
             df_metrics[col] = df_metrics[col] * conversion_rate
 
@@ -205,7 +213,7 @@ try:
         trend_status = "📈 INCREASE / UPWARD" if is_increasing else "📉 DECREASE / DOWNWARD"
         prediction_color = "#00ffcc" if is_increasing else "#ff3366"
         
-        # Summary Row Metrics
+        # Summary Metrics Grid Display Row
         m1, m2, m3 = st.columns(3)
         with m1:
             st.metric(label=f"Current {search_query} Value ({selected_currency.split(' ')[0]})", value=f"{currency_symbol}{live_price:,.4f}", delta=f"{daily_change_pct:+.2f}%")
@@ -217,27 +225,27 @@ try:
         st.markdown("---")
 
         # ==========================================
-        # 5. SPLIT DISPLAY SCREEN (GRAPH + PREDICTION WIDGET)
+        # 5. SPLIT DISPLAY SCREEN (GRAPH + TRADING CARD)
         # ==========================================
         col_graph, col_analysis = st.columns([2, 1])
 
         with col_graph:
-            st.subheader(f"📈 Predictive Candlestick Map")
+            st.subheader(f"📈 Pro Candlestick & Forecast Canvas")
             fig = go.Figure()
             
-            # Candlestick Bars Chart
+            # Candlestick Bars Chart Ingestion
             fig.add_trace(go.Candlestick(
                 x=df_metrics['Date'], open=df_metrics['Open'], high=df_metrics['High'],
                 low=df_metrics['Low'], close=df_metrics['Close'], name='Price Candles',
                 increasing_line_color='#00ffcc', decreasing_line_color='#ff3366'
             ))
             
-            # Technical Overlay calculations
+            # Technical Overlays
             if show_ma50 and len(df_metrics) >= 50:
                 df_metrics['MA50'] = df_metrics['Close'].rolling(window=50).mean()
                 fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA50'], mode='lines', name='50-Day SMA', line=dict(color='#ffaa00', width=1.5)))
             
-            # Plot Machine Learning Prediction Forecast Track Line
+            # Plot 7-Day Machine Learning Prediction Forecast Track Line
             if show_predict:
                 connect_dates = [df_metrics['Date'].iloc[-1]] + list(future_dates)
                 connect_prices = [live_price] + list(future_predictions)
@@ -247,7 +255,7 @@ try:
                     name='🔮 7-Day ML Forecast', line=dict(color='#ff00ff', width=2.5, dash='dash')
                 ))
             
-            # Horizontal Goal Bounds & Labels Overlaid Directly on the Graph
+            # Floating Text and Entry/Exit Lines Printed Inside the Graph Directly
             fig.add_trace(go.Scatter(
                 x=[df_metrics['Date'].iloc[0], future_dates[-1]], y=[entry_target, entry_target], 
                 mode='lines+text', name='Suggested Entry', text=["", f"  BUY ENTRY FLOOR: {currency_symbol}{entry_target:,.2f}"],
@@ -268,7 +276,7 @@ try:
         with col_analysis:
             st.subheader("🔮 Machine Learning & Trading Report")
             
-            # Custom Visual HTML Box for Predictive Trend Verdict
+            # Predictive Trend Banner
             st.markdown(
                 f"<div style='background-color: rgba(255, 0, 255, 0.08); border: 2px solid #ff00ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;'>\n"
                 f"<h4 style='color: #ff00ff; margin-top:0; font-family:sans-serif;'>🤖 AI Direction Forecast:</h4>\n"
@@ -278,14 +286,14 @@ try:
                 unsafe_allow_code_html=True
             )
             
-            # NEW FEATURE: Intelligent Liquid Exchange Recommendations Layout
+            # Liquid Spot Exchange Recommendations
             st.markdown("### 🛒 Where to Buy This Token")
             if search_query in ["BTC", "ETH", "SOL", "AVAX", "LINK", "MATIC"]:
-                st.info("💡 **Recommended Top Tier Exchanges:**\n* **Binance** (Highest overall global spot liquidity)\n* **Coinbase** (Highly preferred for direct bank fiat processing)\n* **Kraken** (Advanced security architecture standards)")
+                st.info("💡 **Recommended High Liquidity Exchanges:**\n* **Binance** (Global market depth leadership)\n* **Coinbase** (Preferred for secure bank wire liquidity gateways)\n* **Kraken** (Institutional tracking framework protection)")
             elif daily_change_pct > 15 or "PEPE" in search_query or "SHIB" in search_query or "BONK" in search_query:
-                st.warning("🔥 **Meme / High-Volatility Speculative Asset Detected:**\n* Available on **Binance Spot** & **KuCoin**\n* Can trade via Decentralized Exchanges: **Uniswap (Ethereum)** or **Raydium (Solana)**")
+                st.warning("🔥 **Meme / High-Volatility Speculative Asset Asset:**\n* Available on **Binance Spot** & **KuCoin**\n* Trading available via Decentralized Exchanges: **Uniswap** or **Raydium** networks")
             else:
-                st.success("💎 **Utility / Mid-Cap Alternative Asset Detected:**\n* Primary Liquidity Pools located on **Binance Exchange** & **Gate.io**\n* Alternative processing available on **MECX** network structures")
+                st.success("💎 **Utility / Mid-Cap Alternative Asset:**\n* Primary Spot Market Liquidity located on **Binance** & **Gate.io**\n* Secondary processing asset pairs tracked on **MEXC Global** networks")
             
             st.markdown("---")
             st.markdown(f"""
@@ -300,13 +308,13 @@ try:
             st.download_button(label="📥 Download Data Spreadsheet", data=csv_buffer, file_name=f"{search_query}_historical_metrics.csv", mime="text/csv")
 
         # ==========================================
-        # FIXED FEATURES: RE-INTEGRATED fundamental analysis profiles
+        # 6. DYNAMIC PROJECT TECHNOLOGY & PROFILE EXPANDER
         # ==========================================
         st.markdown("---")
         st.markdown("### ℹ️ Project Fundamental Analysis & Technology Profile")
         with st.expander(f"📖 Click to View What {search_query} Is & How Its Technology Works", expanded=True):
             st.info(project_profile)
-            st.caption(f"Metadata dynamically aggregated via international database hubs for token instances: {search_query}-USD.")
+            st.caption(f"Fundamental structural profiles aggregated dynamically via global blockchain network endpoints for asset: {search_query}.")
 
     else:
         st.error(f"⚠️ Index Lookup Notice: Unrecognized symbol identifier '{search_query}'. Please verify standard abbreviations.")
