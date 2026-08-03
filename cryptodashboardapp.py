@@ -24,7 +24,7 @@ search_query = st.text_input("🎯 Enter Any Cryptocurrency Token Symbol (e.g. B
 if not search_query:
     search_query = "BTC"
 
-# NEW & EXPANDED: Full Interactive Timeframe Range Selector
+# Full Interactive Timeframe Range Selector (1D to MAX)
 st.sidebar.markdown("---")
 st.sidebar.subheader("⏰ Analysis Horizon")
 timeframe = st.sidebar.radio(
@@ -34,7 +34,6 @@ timeframe = st.sidebar.radio(
     horizontal=False
 )
 
-# Maps the user interface selections perfectly to core financial data parameters
 tf_map = {
     "1 Day": "1d",
     "1 Week": "5d",
@@ -68,7 +67,6 @@ if st.sidebar.button("🔄 Clear App Cache Buffer"):
 def extract_crypto_lifespan(ticker, period):
     try:
         data_pull = yf.Ticker(ticker)
-        # Fetch data based on the dynamic timeline choice
         raw_df = data_pull.history(period=period) 
         if not raw_df.empty:
             df = raw_df.reset_index()
@@ -148,10 +146,8 @@ try:
         ath_price = df_metrics['High'].max()
         atl_price = df_metrics['Low'].min()
         
-        # Calculate trailing 50-day support averages
+        # Safe moving average boundary logic
         rolling_mean = df_metrics['Close'].rolling(window=50).mean().iloc[-1]
-        # Safety Fail-Safe: If the user selects a tiny period like '1 Day' or '1 Week', 
-        # rolling_mean turns into NaN due to lack of historical rows. We cleanly catch it here:
         if pd.isna(rolling_mean):
             rolling_mean = live_price
             
@@ -161,11 +157,11 @@ try:
         if exit_target <= live_price:
             exit_target = live_price * 1.15
 
-        # Past 24h Change Logic
+        # Past Change Logic
         daily_change_usd = live_price - open_price
         daily_change_pct = (daily_change_usd / open_price) * 100
 
-        # Primary Overview Rows
+        # Primary Metrics Summary Row
         m1, m2, m3 = st.columns(3)
         with m1:
             st.metric(label=f"Current {search_query} Value", value=f"${live_price:,.4f}", delta=f"{daily_change_pct:+.2f}% (Selected View)")
@@ -177,7 +173,7 @@ try:
         st.markdown("---")
 
         # ==========================================
-        # 5. DUAL LAYOUT: REAL GRAPH + DAY-TO-DAY ANALYSIS
+        # 5. DUAL LAYOUT: REAL GRAPH (WITH LABELS) + ANALYSIS
         # ==========================================
         col_graph, col_analysis = st.columns([2, 1])
 
@@ -186,7 +182,7 @@ try:
             
             fig = go.Figure()
             
-            # Candlestick Data Layers
+            # Candlestick Bars
             fig.add_trace(go.Candlestick(
                 x=df_metrics['Date'],
                 open=df_metrics['Open'],
@@ -207,9 +203,29 @@ try:
                 df_metrics['MA200'] = df_metrics['Close'].rolling(window=200).mean()
                 fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA200'], mode='lines', name='200-Day SMA', line=dict(color='#ff00ff', width=1.5, dash='dot')))
             
-            # Strategy Target Reference Channels
-            fig.add_trace(go.Scatter(x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], y=[entry_target, entry_target], mode='lines', name='💡 Target Entry Floor', line=dict(color='#2ca02c', width=2, dash='dash')))
-            fig.add_trace(go.Scatter(x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], y=[exit_target, exit_target], mode='lines', name='🎯 Target Exit Ceiling', line=dict(color='#d62728', width=2, dash='dash')))
+            # Visual Setup: Target Entry Line & Integrated Text Label inside Graph Canvas
+            fig.add_trace(go.Scatter(
+                x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+                y=[entry_target, entry_target], 
+                mode='lines+text', 
+                name='💡 Suggested Entry Floor', 
+                text=["", f"  SUGGESTED ENTRY FLOOR: ${entry_target:,.2f}"],
+                textposition="top right",
+                textfont=dict(color="#2ca02c", size=12, family="Arial Black"),
+                line=dict(color='#2ca02c', width=2.5, dash='dash')
+            ))
+            
+            # Visual Setup: Target Exit Line & Integrated Text Label inside Graph Canvas
+            fig.add_trace(go.Scatter(
+                x=[df_metrics['Date'].iloc[0], df_metrics['Date'].iloc[-1]], 
+                y=[exit_target, exit_target], 
+                mode='lines+text', 
+                name='🎯 Suggested Exit Ceiling', 
+                text=["", f"  SUGGESTED EXIT CEILING: ${exit_target:,.2f}"],
+                textposition="bottom right",
+                textfont=dict(color="#d62728", size=12, family="Arial Black"),
+                line=dict(color='#d62728', width=2.5, dash='dash')
+            ))
             
             fig.update_layout(
                 hovermode="x unified",
@@ -224,7 +240,7 @@ try:
         with col_analysis:
             st.subheader("📋 Day-to-Day Technical Analysis")
             
-            # Traffic Light Banner Alerts
+            # Risk Verdict Flag
             if live_price <= entry_target * 1.05:
                 st.success(f"🟢 BUY SIGNAL: Structurally Undersold")
             elif live_price >= exit_target * 0.85:
@@ -232,7 +248,6 @@ try:
             else:
                 st.warning(f"🟡 HOLD STATUS: Balanced Range Trading")
             
-            # Automated Metrics Report Card
             st.markdown(f"""
             ### 🔍 Core Target Blueprint
             * **Suggested Entry Point (Buy Zone):** `${entry_target:,.4f}`
