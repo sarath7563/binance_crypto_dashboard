@@ -4,4 +4,3 @@ requests
 plotly
 yfinance
 scikit-learn
-numpy
