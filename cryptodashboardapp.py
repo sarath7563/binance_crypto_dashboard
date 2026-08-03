@@ -166,3 +166,79 @@ try:
         atl_price = df_metrics['Low'].min() * curr_rate
         
         rolling_mean = df_metrics['Close'].rolling(window=50).mean().iloc[-1]
+        if pd.isna(rolling_mean):
+            rolling_mean = df_metrics['Close'].iloc[-1]
+        rolling_mean *= curr_rate
+            
+        entry_target = rolling_mean * 0.90
+        exit_target = ath_price * 0.95
+
+        if exit_target <= live_price:
+            exit_target = live_price * 1.15
+
+        # Past 24h Change Logic
+        daily_change_usd = live_price - open_price
+        daily_change_pct = (daily_change_usd / open_price) * 100
+
+        # Injecting Custom CSS styling injection to guarantee text visibility
+        st.markdown("""
+        <style>
+            /* Force metrics values to display in crisp, solid high-contrast white */
+            div[data-testid="stMetricValue"] {
+                color: #FFFFFF !important;
+                font-size: 2.3rem !important;
+                font-weight: 700 !important;
+            }
+            /* Label headers clearly visible in light grey text styling */
+            div[data-testid="stMetricLabel"] p {
+                color: #E5E7EB !important;
+                font-size: 1.05rem !important;
+                font-weight: 500 !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # Primary Metrics Cards Layout Display
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric(label=f"Current {search_query} Value ({currency_selection})", value=f"{curr_symbol}{live_price:,.4f}", delta=f"{daily_change_pct:+.2f}%")
+        with m2:
+            st.metric(label=f"View Window High ({currency_selection})", value=f"{curr_symbol}{ath_price:,.4f}")
+        with m3:
+            st.metric(label=f"View Window Low ({currency_selection})", value=f"{curr_symbol}{atl_price:,.4f}")
+
+        st.markdown("---")
+
+        # ==========================================
+        # 5. DUAL INTERACTIVE INTERFACE TABS
+        # ==========================================
+        tab_trading, tab_technology = st.tabs(["📈 Live Trading & AI Analytics", "🔬 Technology Infrastructure"])
+
+        with tab_trading:
+            col_graph, col_analysis = st.columns([2, 1])
+
+            with col_graph:
+                st.subheader(f"📊 {search_query} Candlestick Chart Engine")
+                
+                fig = go.Figure()
+                
+                # Candlestick Data Plottings
+                fig.add_trace(go.Candlestick(
+                    x=df_metrics['Date'],
+                    open=df_metrics['Open'] * curr_rate,
+                    high=df_metrics['High'] * curr_rate,
+                    low=df_metrics['Low'] * curr_rate,
+                    close=df_metrics['Close'] * curr_rate,
+                    name='Price Candles',
+                    increasing_line_color='#00ffcc', 
+                    decreasing_line_color='#ff3366'
+                ))
+                
+                # Conditional Trendlines
+                if show_ma50 and len(df_metrics) >= 50:
+                    df_metrics['MA50'] = df_metrics['Close'].rolling(window=50).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA50'], mode='lines', name='50-Day SMA', line=dict(color='#ffaa00', width=1.5)))
+                    
+                if show_ma200 and len(df_metrics) >= 200:
+                    df_metrics['MA200'] = df_metrics['Close'].rolling(window=200).mean() * curr_rate
+                    fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA200'], mode='lines', name='200-Day SMA', line=dict(color='#
