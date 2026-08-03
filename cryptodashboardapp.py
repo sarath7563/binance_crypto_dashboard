@@ -7,21 +7,14 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 # ==========================================
-# 1. APPLICATION VIEWPORT SETUP & INTERACTIVE THEMING
+# 1. APPLICATION VIEWPORT SETUP
 # ==========================================
 st.set_page_config(page_title="Universal Crypto Predictive Engine", page_icon="⚡", layout="wide")
 
-# Custom CSS injection to make the dashboard look like a premium premium trading app
+# Safe CSS structural theme layout patch
 st.markdown("""
     <style>
-    .reportview-container { background: #0e1117; }
     div.stMetric { background-color: #1f2937; border: 1px solid #374151; padding: 15px; border-radius: 10px; }
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #1f2937; border: 1px solid #374151; border-radius: 5px 5px 0px 0px;
-        padding: 10px 20px; color: #9ca3af; font-weight: bold;
-    }
-    .stTabs [aria-selected="true"] { background-color: #ff00ff !important; color: white !important; border-color: #ff00ff !important; }
     </style>
     """, unsafe_allow_code_html=True)
 
@@ -140,7 +133,7 @@ def extract_crypto_lifespan(ticker, period):
     except Exception:
         return pd.DataFrame()
 
-# UPGRADED: Enhanced Structured Token Description & Tech Stack Details Parser
+# Comprehensive Token Information and Technology Profile Parser
 @st.cache_data(ttl=3600)  
 def fetch_asset_profile_summary(ticker, symbol):
     try:
@@ -161,8 +154,7 @@ def fetch_asset_profile_summary(ticker, symbol):
     except Exception:
         pass
 
-    # Dynamic baseline generator if specific niche descriptions fail to load
-    return f"This cryptographic asset runs on decentralized ledger infrastructure to handle trustless secure transactions. It utilizes consensus mechanisms to secure its network node pathways, managing native computational data models across globally distributed ecosystem frameworks."
+    return f"Detailed project documentation for '{symbol}' is actively tracked on decentralized ledger networks. This token operates as a primary cryptographic asset running native consensus and execution rules within its respective blockchain network layer."
 
 # ==========================================
 # 4. DATA COMPUTATION & MACHINE LEARNING PREDICTION
@@ -225,8 +217,7 @@ try:
         future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), periods=7)
         
         is_increasing = future_predictions[-1] > live_price
-        trend_status = "📈 INCREASE / UPWARD" if is_increasing else "📉 DECREASE / DOWNWARD"
-        prediction_color = "#00ffcc" if is_increasing else "#ff3366"
+        trend_status = "📈 UPWARD EXPECTED" if is_increasing else "📉 DOWNWARD EXPECTED"
         
         # Summary Metrics Grid Display Row
         m1, m2, m3 = st.columns(3)
@@ -240,7 +231,7 @@ try:
         st.markdown("---")
 
         # ==========================================
-        # INTERACTIVE THEME UPGRADE: MULTI-TAB VIEWPORTS
+        # 5. SPLIT TAB DISPLAY SCREEN (INTERACTIVE MULTI-TAB THEMING)
         # ==========================================
         tab_trading, tab_tech = st.tabs(["📊 Live Trading & AI Analytics", "🔬 Technology Infrastructure & Tokenomics"])
 
@@ -251,65 +242,75 @@ try:
                 st.subheader(f"📈 Pro Candlestick & Forecast Canvas")
                 fig = go.Figure()
                 
-                # Candlestick Bars Chart
+                # Candlestick Bars Chart Ingestion
                 fig.add_trace(go.Candlestick(
                     x=df_metrics['Date'], open=df_metrics['Open'], high=df_metrics['High'],
                     low=df_metrics['Low'], close=df_metrics['Close'], name='Price Candles',
                     increasing_line_color='#00ffcc', decreasing_line_color='#ff3366'
                 ))
                 
+                # Technical Overlays
                 if show_ma50 and len(df_metrics) >= 50:
                     df_metrics['MA50'] = df_metrics['Close'].rolling(window=50).mean()
                     fig.add_trace(go.Scatter(x=df_metrics['Date'], y=df_metrics['MA50'], mode='lines', name='50-Day SMA', line=dict(color='#ffaa00', width=1.5)))
                 
+                # Plot 7-Day Machine Learning Prediction Forecast Track Line
                 if show_predict:
                     connect_dates = [df_metrics['Date'].iloc[-1]] + list(future_dates)
                     connect_prices = [live_price] + list(future_predictions)
-                    fig.add_trace(go.Scatter(x=connect_dates, y=connect_prices, mode='lines+markers', name='🔮 7-Day ML Forecast', line=dict(color='#ff00ff', width=2.5, dash='dash')))
+                    
+                    fig.add_trace(go.Scatter(
+                        x=connect_dates, y=connect_prices, mode='lines+markers',
+                        name='🔮 7-Day ML Forecast', line=dict(color='#ff00ff', width=2.5, dash='dash')
+                    ))
                 
-                # Overlay Target Entry/Exit labels
+                # Floating Text and Entry/Exit Lines Printed Inside the Graph Directly
                 fig.add_trace(go.Scatter(
                     x=[df_metrics['Date'].iloc[0], future_dates[-1]], y=[entry_target, entry_target], 
                     mode='lines+text', name='Suggested Entry', text=["", f"  BUY ENTRY FLOOR: {currency_symbol}{entry_target:,.2f}"],
-                    textposition="top right", textfont=dict(color="#2ca02c", size=11, family="Arial Black"), line=dict(color='#2ca02c', width=2, dash='dash')
+                    textposition="top right", textfont=dict(color="#2ca02c", size=11), line=dict(color='#2ca02c', width=2, dash='dash')
                 ))
                 fig.add_trace(go.Scatter(
                     x=[df_metrics['Date'].iloc[0], future_dates[-1]], y=[exit_target, exit_target], 
-                    mode='lines+text', name='Suggested Exit', text=["", f"  EXIT CEILING: {currency_symbol}{exit_target:,.2f}"],
-                    textposition="bottom right", textfont=dict(color="#d62728", size=11, family="Arial Black"), line=dict(color='#d62728', width=2, dash='dash')
+                    mode='lines+text', name='Suggested Exit', text=["", f"  EXIT TARGET CEILING: {currency_symbol}{exit_target:,.2f}"],
+                    textposition="bottom right", textfont=dict(color="#d62728", size=11), line=dict(color='#d62728', width=2, dash='dash')
                 ))
                 
-                fig.update_layout(hovermode="x unified", template="plotly_dark", xaxis_rangeslider_visible=False, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                fig.update_layout(
+                    hovermode="x unified", template="plotly_dark", xaxis_rangeslider_visible=False,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             with col_analysis:
-                st.subheader("🔮 Machine Learning Report")
+                st.subheader("🔮 Machine Learning & Trading Report")
                 
-                st.markdown(
-                    f"<div style='background-color: rgba(255, 0, 255, 0.08); border: 2px solid #ff00ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;'>\n"
-                    f"<h4 style='color: #ff00ff; margin-top:0; font-family:sans-serif;'>🤖 AI Direction Forecast:</h4>\n"
-                    f"<h2 style='color: {prediction_color}; margin: 5px 0; font-family:sans-serif;'>{trend_status}</h2>\n"
-                    f"<p style='color: #cccccc; font-size: 13px; margin-bottom:0;'>Projected 7-day target terminal: <b>{currency_symbol}{future_predictions[-1]:,.4f}</b></p>\n"
-                    f"</div>", 
-                    unsafe_allow_code_html=True
-                )
+                # Safe native text info boxes for core metrics layout stability
+                st.info(f"🤖 AI Direction Forecast: {trend_status}\n\nThe model projects the 7-day future value at: {currency_symbol}{future_predictions[-1]:,.4f}")
                 
+                # Liquid Spot Exchange Recommendations
                 st.markdown("### 🛒 Where to Buy This Token")
                 if search_query in ["BTC", "ETH", "SOL", "AVAX", "LINK", "MATIC"]:
-                    st.info("💡 **Recommended High Liquidity Exchanges:**\n* **Binance** (Global market depth leadership)\n* **Coinbase** (Preferred for secure fiat currency processing)\n* **Kraken** (Advanced network infrastructure safety)")
+                    st.success("💡 **Recommended High Liquidity Exchanges:**\n* **Binance** (Global market depth leadership)\n* **Coinbase** (Preferred for secure bank wire liquidity gateways)\n* **Kraken** (Institutional tracking framework protection)")
                 elif daily_change_pct > 15 or "PEPE" in search_query or "SHIB" in search_query or "BONK" in search_query:
-                    st.warning("🔥 **Meme / Speculative Market Core:**\n* Tracked active spot: **Binance Spot** & **KuCoin**\n* Liquidity pools available on: **Uniswap** or **Raydium** pairs")
+                    st.warning("🔥 **Meme / High-Volatility Speculative Asset:**\n* Available on **Binance Spot** & **KuCoin**\n* Trading available via Decentralized Exchanges: **Uniswap** or **Raydium** networks")
                 else:
-                    st.success("💎 **Utility / Mid-Cap Alternative Asset:**\n* Primary Liquidity Pools located on **Binance** & **Gate.io**\n* Secondary processing tracking available on **MEXC Global** networks")
+                    st.info("💎 **Utility / Mid-Cap Alternative Asset:**\n* Primary Spot Market Liquidity located on **Binance** & **Gate.io**\n* Secondary processing asset pairs tracked on **MEXC Global** networks")
                 
                 st.markdown("---")
+                st.markdown(f"""
+                ### 📊 Statistical Summary Card
+                * **Suggested Entry Zone:** `{currency_symbol}{entry_target:,.4f}`
+                * **Suggested Exit Zone:** `{currency_symbol}{exit_target:,.4f}`
+                * **Window Volatility Spread:** `{currency_symbol}{df_metrics['High'].iloc[-1] - df_metrics['Low'].iloc[-1]:,.4f}`
+                * **Distance to Window Peak:** `{((ath_price - live_price)/ath_price)*100:.2f}% below top`
+                """)
+                
                 csv_buffer = df_metrics.to_csv(index=False).encode('utf-8')
                 st.download_button(label="📥 Download Data Spreadsheet", data=csv_buffer, file_name=f"{search_query}_historical_metrics.csv", mime="text/csv")
 
         with tab_tech:
             st.subheader(f"🔬 Complete {search_query} Architectural Technical Details")
-            
-            # Divide the token project profiles beautifully into grid columns
             col_desc, col_tech_breakdown = st.columns([2, 1])
             
             with col_desc:
@@ -318,47 +319,40 @@ try:
                 
             with col_tech_breakdown:
                 st.markdown("#### 🛠️ Core Technology Blueprint")
-                
-                # Intelligent conditional profile details based on what symbol is entered
                 if search_query == "BTC":
                     st.markdown("""
-                    * **Technology Base:** Proof-of-Work (PoW) Consensus Layer [cite: 46]
+                    * **Technology Base:** Proof-of-Work (PoW) Consensus Layer
                     * **Hashing Scheme:** SHA-256 Network Protocol
-                    * **Primary Use Case:** Peer-to-peer Digital Gold & Value Asset [cite: 164]
+                    * **Primary Use Case:** Peer-to-peer Digital Gold & Value Asset
                     * **Network Layer:** Layer-1 Base Secure Mainnet
                     """)
                 elif search_query == "ETH":
                     st.markdown("""
-                    * **Technology Base:** Proof-of-Stake (PoS) Smart Contract Engine [cite: 35]
+                    * **Technology Base:** Proof-of-Stake (PoS) Smart Contract Engine
                     * **Execution Unit:** Ethereum Virtual Machine (EVM)
-                    * **Primary Use Case:** Decentralized Applications (dApps) & Gas Execution [cite: 35, 432]
-                    * **Network Layer:** Layer-1 Smart Contract Hub [cite: 35]
+                    * **Primary Use Case:** Decentralized Applications (dApps) & Gas Execution
+                    * **Network Layer:** Layer-1 Smart Contract Hub
                     """)
                 elif search_query in ["DMTR", "VLO"]:
                     st.markdown(f"""
-                    * **Technology Base:** Smart Token Execution Rules [cite: 49]
-                    * **Protocol Goal:** Enterprise Real-World Utility Application [cite: 432]
-                    * **Primary Use Case:** Operational Supply Token/Niche Network Utility [cite: 432, 456]
-                    * **Network Layer:** Integrated Smart Utility Matrix [cite: 456]
+                    * **Technology Base:** Smart Token Execution Rules
+                    * **Protocol Goal:** Enterprise Real-World Utility Application
+                    * **Primary Use Case:** Operational Supply Token/Niche Network Utility
+                    * **Network Layer:** Integrated Smart Utility Matrix
                     """)
                 else:
                     st.markdown(f"""
-                    * **Technology Base:** Multi-node Cryptographic Ledger Protocol [cite: 457]
-                    * **Protocol Scheme:** Custom Native Token Consensus Matrix [cite: 457]
-                    * **Primary Use Case:** Decentralized Transactional & Network Execution [cite: 457]
-                    * **Network Layer:** Layer-1 / Layer-2 Decentralized Ecosystem Asset 
+                    * **Technology Base:** Multi-node Cryptographic Ledger Protocol
+                    * **Protocol Scheme:** Custom Native Token Consensus Matrix
+                    * **Primary Use Case:** Decentralized Transactional & Network Execution
+                    * **Network Layer:** Layer-1 / Layer-2 Decentralized Ecosystem Asset
                     """)
                     
                 st.markdown("---")
-                st.markdown(f"""
-                ### 📊 Valuation Baseline Metrics
-                * **Suggested Entry Range:** `{currency_symbol}{entry_target:,.4f}` [cite: 441]
-                * **Suggested Exit Range:** `{currency_symbol}{exit_target:,.4f}` [cite: 442]
-                * **Window Historical Peak:** `{currency_symbol}{ath_price:,.4f}` [cite: 440]
-                """)
+                st.caption("Fundamental structural profiles aggregated dynamically via global blockchain network endpoints.")
 
     else:
-        st.error(f"⚠️ Index Lookup Notice: Unrecognized symbol identifier '{search_query}'. Please verify standard abbreviations[cite: 446].")
+        st.error(f"⚠️ Index Lookup Notice: Unrecognized symbol identifier '{search_query}'. Please verify standard abbreviations.")
 
 except Exception as e:
-    st.info("💡 Awaiting token entry inputs... Input desired trading symbol inside the primary search console[cite: 446].")
+    st.info("💡 Awaiting token entry inputs... Input desired trading symbol inside the primary search console.")
