@@ -11,6 +11,67 @@ import numpy as np
 # ==========================================
 st.set_page_config(page_title="Universal Crypto Intelligence Engine", page_icon="⚡", layout="wide")
 
+# ==========================================
+# FORCED GLOBAL DARK MODE THEME (CSS INJECTION)
+# ==========================================
+st.markdown("""
+<style>
+    /* Main App Dark Background & Base Font */
+    .stApp {
+        background-color: #0b0f19 !important;
+        color: #f8fafc !important;
+    }
+    
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #111827 !important;
+        border-right: 1px solid #1f2937 !important;
+    }
+    
+    /* Text Header Visibility Overrides */
+    h1, h2, h3, h4, h5, h6, label, p, span {
+        color: #f8fafc !important;
+    }
+    
+    /* Input Search Bar and Dropdowns */
+    div[data-baseweb="input"] input, div[data-baseweb="select"] {
+        background-color: #1f2937 !important;
+        color: #ffffff !important;
+        border-color: #374151 !important;
+    }
+    
+    /* Dark Metric Cards */
+    div[data-testid="stMetric"] {
+        background-color: #1e293b !important;
+        border: 2px solid #334155 !important;
+        padding: 20px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4) !important;
+    }
+    div[data-testid="stMetricLabel"] p {
+        color: #94a3b8 !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stMetricValue"] div {
+        color: #ffffff !important;
+        font-size: 2.4rem !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Dark Mode Tabs Styling */
+    button[data-baseweb="tab"] {
+        background-color: transparent !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+    }
+    button[aria-selected="true"] {
+        color: #38bdf8 !important;
+        border-bottom-color: #38bdf8 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("⚡ Universal Real-Time Crypto Risk Analytics Terminal")
 st.markdown("An enterprise-grade data engineering framework capable of indexing, scoring, and visually mapping **any asset class** across high-cap tokens, altcoins, meme economies, and micro-cap utility networks.")
 
@@ -180,34 +241,6 @@ try:
         daily_change_usd = live_price - open_price
         daily_change_pct = (daily_change_usd / open_price) * 100
 
-        # ==========================================
-        # HIGH-CONTRAST CSS VISIBILITY OVERRIDES
-        # ==========================================
-        st.markdown("""
-        <style>
-            /* Force metric containers to use an explicit dark theme layout block to contrast light browser modes */
-            div[data-testid="stMetric"] {
-                background-color: #1e293b !important;
-                border: 2px solid #334155 !important;
-                padding: 20px !important;
-                border-radius: 12px !important;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3) !important;
-            }
-            /* Lock description labels to light slate silver */
-            div[data-testid="stMetricLabel"] p {
-                color: #e2e8f0 !important;
-                font-size: 1.1rem !important;
-                font-weight: 600 !important;
-            }
-            /* Force numerical metric price values to pop in bold white text digits */
-            div[data-testid="stMetricValue"] div {
-                color: #ffffff !important;
-                font-size: 2.4rem !important;
-                font-weight: 700 !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-
         # Primary Metrics Cards Layout Display
         m1, m2, m3 = st.columns(3)
         with m1:
@@ -319,10 +352,10 @@ try:
                     st.warning(f"🟡 HOLD STATUS: Balanced Range Trading")
                 
                 st.markdown(f"""
-                <div style="background-color: #311b92; padding: 15px; border-radius: 8px; border: 1px solid #7c4dff; margin-bottom: 20px;">
-                    <h4 style="color: #e040fb; margin-top:0;">🔮 7-Day Machine Learning Trend Box</h4>
-                    <p style="color: white; margin-bottom: 5px;">Projected Trend Direction: <b>{pred_verdict}</b></p>
-                    <p style="color: white; margin-bottom: 0;">Expected End Target Value: <b>{curr_symbol}{target_pred_val:,.4f}</b></p>
+                <div style="background-color: #1e1b4b; padding: 15px; border-radius: 8px; border: 1px solid #6366f1; margin-bottom: 20px;">
+                    <h4 style="color: #a855f7; margin-top:0;">🔮 7-Day Machine Learning Trend Box</h4>
+                    <p style="color: #ffffff; margin-bottom: 5px;">Projected Trend Direction: <b>{pred_verdict}</b></p>
+                    <p style="color: #ffffff; margin-bottom: 0;">Expected End Target Value: <b>{curr_symbol}{target_pred_val:,.4f}</b></p>
                 </div>
                 """, unsafe_allow_html=True)
                 
